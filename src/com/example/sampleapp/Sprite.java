@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 
 public class Sprite {
 
@@ -66,6 +67,9 @@ public class Sprite {
     
     private int textureId;
     
+    public Float x;
+    public Float y;
+    
     public void setTextureId(int textureId) {
     	this.textureId = textureId;
     }
@@ -110,6 +114,14 @@ public class Sprite {
 
     public void draw(float[] mvpMatrix) {
     	
+    	float[] local = mvpMatrix.clone();
+    	
+    	Matrix.translateM(local,
+    					  0,	// Offset
+    					  x,	// X
+    					  y,	// Y
+    					  0);     
+    	
         // Add program to OpenGL environment
         GLES20.glUseProgram(mProgram);
 
@@ -129,7 +141,7 @@ public class Sprite {
         MyGLRenderer.checkGlError("glGetUniformLocation");
 
         // Apply the projection and view transformation
-        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, local, 0);
         MyGLRenderer.checkGlError("glUniformMatrix4fv");
       
 		// Retrieve uniform locations for the shader program.

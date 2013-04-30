@@ -21,9 +21,16 @@ import static android.opengl.Matrix.translateM;
 
 public class MyGLRenderer implements GLSurfaceView.Renderer {
 
+	private static final int NUM_SPRITES = 8;
+	
 	private final Context context;
 	private int texture;
 	private int starTexture;
+	
+	private int textureTile1;
+	private int textureTile2;
+	private int textureTile3;
+	private int textureTile4;
 	
     private static final String TAG = "MyGLRenderer";
     private Square   mSquare;
@@ -44,6 +51,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private int mScreenH;
     private float mXRatio;
     private float mYRatio;
+    
+    private Sprite[] mSprites = new Sprite[NUM_SPRITES];
     
     public MyGLRenderer(Context context) {
     	this.context = context;
@@ -76,16 +85,18 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         int touchX = (int) (mScreenW - mTouchX);
         int touchY = (int) (mScreenH - mTouchY);
         
-        Matrix.translateM(mMVPMatrix,
-        				  0,											 // Offset
-        				  (float) ((touchX) * (mXRatio * 2) / mScreenW - mXRatio),  // X
-        				  (float) ((touchY) * (mYRatio * 2) / mScreenH - mYRatio),  // Y
-        				  0);                     						 // Z
-        
+        mStar.x = (float) ((touchX) * (mXRatio * 2) / mScreenW - mXRatio);
+        mStar.y = (float) ((touchY) * (mYRatio * 2) / mScreenH - mYRatio);
+       
 		// Draw square
         mSquare.draw(mMVPMatrix);
         
-        //mStar.draw(mMVPMatrix);
+        mStar.draw(mMVPMatrix);
+        
+        for (int n=0;n<NUM_SPRITES;n++)
+        {
+        	mSprites[n].draw(mMVPMatrix);
+        }
 	}
 
 	@Override
@@ -131,6 +142,24 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         
         mSquare.setTextureId(texture);
         mStar.setTextureId(starTexture);
+        
+        
+        
+        mSprites = new Sprite[NUM_SPRITES];
+        
+        textureTile1 = TextureHelper.loadTexture(context, R.drawable.tile_1);
+        textureTile2 = TextureHelper.loadTexture(context, R.drawable.tile_2);
+        textureTile3 = TextureHelper.loadTexture(context, R.drawable.tile_3);
+        textureTile4 = TextureHelper.loadTexture(context, R.drawable.tile_4);
+        
+        for (int n=0;n<NUM_SPRITES;n++)
+        {
+        	mSprites[n] = new Sprite();
+        	mSprites[n].setTextureId(textureTile1);
+        	mSprites[n].x = -0.9f + (n * 0.2f); 
+        	mSprites[n].y =	0f;
+        }
+        
 	}
 	
     public static int loadShader(int type, String shaderCode){
