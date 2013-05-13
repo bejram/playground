@@ -9,32 +9,23 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 
 public class Sprite {
-
-	// Uniform constants.
-	protected static final String U_MATRIX = "u_Matrix";
-	protected static final String U_TEXTURE_UNIT = "u_TextureUnit";
-	
-	// Attribute constants.
-	protected static final String A_POSITION = "a_Position";
-	protected static final String A_COLOR = "a_Color";
-	protected static final String A_TEXTURE_COORDINATES = "a_TextureCoordinates";
 	
     private final String vertexShaderCode =
-    	"uniform mat4 uMVPMatrix;" +
+    	"uniform mat4 uVPMatrix;" +
     	"attribute vec4 vPosition;" +
-    	"attribute vec2 a_TextureCoordinates;" +
-    	"varying vec2 v_TextureCoordinates;" +
+    	"attribute vec2 aTextureCoordinates;" +
+    	"varying vec2 vTextureCoordinates;" +
     	"void main() {" +
-    	"  v_TextureCoordinates = a_TextureCoordinates;" +
-    	"  gl_Position = uMVPMatrix * vPosition;" +
+    	"  vTextureCoordinates = aTextureCoordinates;" +
+    	"  gl_Position = uVPMatrix * vPosition;" +
     	"}";
     
     private final String fragmentShaderCode =
     		"precision mediump float;" +
-    		"uniform sampler2D u_TextureUnit;" +
-    		"varying vec2 v_TextureCoordinates;" +
+    		"uniform sampler2D uTextureUnit;" +
+    		"varying vec2 vTextureCoordinates;" +
     		"void main() {" +
-    		"  gl_FragColor = texture2D(u_TextureUnit, v_TextureCoordinates);" +
+    		"  gl_FragColor = texture2D(uTextureUnit, vTextureCoordinates);" +
     		"}";            		
         		
     private final FloatBuffer vertexBuffer;
@@ -42,16 +33,16 @@ public class Sprite {
     private final ShortBuffer drawListBuffer;
     private final int mProgram;
     private int mPositionHandle;
-    private int mMVPMatrixHandle;
+    private int mVPMatrixHandle;
     private int muTextureUnitLocationHandle;
     private int maTextureCoordinatesLocationHandle;
 	
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
     static float squareCoords[] = { 0.0f,  0.0f, 0.0f,   // top left
-                                     0.0f, -0.4f, 0.0f,   // bottom left
-                                     0.4f, -0.4f, 0.0f,   // bottom right
-                                     0.4f,  0.0f, 0.0f }; // top right
+                                    0.0f, -0.4f, 0.0f,   // bottom left
+                                    0.4f, -0.4f, 0.0f,   // bottom right
+                                    0.4f,  0.0f, 0.0f }; // top right
 
     private final short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
 
@@ -137,18 +128,18 @@ public class Sprite {
                                      vertexStride, vertexBuffer);
         
         // get handle to shape's transformation matrix
-        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
+        mVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uVPMatrix");
         MyGLRenderer.checkGlError("glGetUniformLocation");
 
         // Apply the projection and view transformation
-        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, local, 0);
+        GLES20.glUniformMatrix4fv(mVPMatrixHandle, 1, false, local, 0);
         MyGLRenderer.checkGlError("glUniformMatrix4fv");
       
 		// Retrieve uniform locations for the shader program.
-        muTextureUnitLocationHandle = GLES20.glGetUniformLocation(mProgram, U_TEXTURE_UNIT);
+        muTextureUnitLocationHandle = GLES20.glGetUniformLocation(mProgram, "uTextureUnit");
 		
 		// Retrieve attribute locations for the shader program.
-		maTextureCoordinatesLocationHandle = GLES20.glGetAttribLocation(mProgram, A_TEXTURE_COORDINATES);        	
+		maTextureCoordinatesLocationHandle = GLES20.glGetAttribLocation(mProgram, "aTextureCoordinates");        	
 		
 		// Set the active texture unit to texture unit 0.
 		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);

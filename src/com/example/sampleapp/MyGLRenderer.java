@@ -33,12 +33,13 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 	private int textureTile4;
 	
     private static final String TAG = "MyGLRenderer";
-    private Square   mSquare;
+    private Sprite mSquare;
     private Sprite mStar;
     
-    private final float[] mMVPMatrix = new float[16];
     private final float[] mProjMatrix = new float[16];
     private final float[] mVMatrix = new float[16];
+    private final float[] mVPMatrix = new float[16];
+    
     private final float[] mRotationMatrix = new float[16];
 
     // Declare as volatile because we are updating it from another thread
@@ -52,6 +53,8 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     private float mXRatio;
     private float mYRatio;
     
+    private float mLookAtEyeZ = -1;
+    
     private Sprite[] mSprites = new Sprite[NUM_SPRITES];
     
     public MyGLRenderer(Context context) {
@@ -60,17 +63,12 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
     
 	@Override
 	public void onDrawFrame(GL10 unused) {
-		  
+		
         // Draw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
-        // Set the camera position (View matrix)
-        Matrix.setLookAtM(mVMatrix, 0, 0, 0, -3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
-
-        //Matrix.setLookAtM(rm, rmOffset, eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ)
         
         // Calculate the projection and view transformation
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjMatrix, 0, mVMatrix, 0);
+        Matrix.multiplyMM(mVPMatrix, 0, mProjMatrix, 0, mVMatrix, 0);
   
         // Create a rotation for the triangle
         //long time = SystemClock.uptimeMillis() % 4000L;
@@ -80,7 +78,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         //Matrix.setRotateM(mRotationMatrix, 0, angle, 0, 0, -1.0f);
 
         // Combine the rotation matrix with the projection and camera view
-        //Matrix.multiplyMM(mMVPMatrix, 0, mRotationMatrix, 0, mMVPMatrix, 0);
+        //Matrix.multiplyMM(mVPMatrix, 0, mRotationMatrix, 0, mVPMatrix, 0);
 
         int touchX = (int) (mScreenW - mTouchX);
         int touchY = (int) (mScreenH - mTouchY);
@@ -89,21 +87,20 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         mStar.y = (float) ((touchY) * (mYRatio * 2) / mScreenH - mYRatio);
        
 		// Draw square
-        mSquare.draw(mMVPMatrix);
+        mSquare.draw(mVPMatrix);
         
-        mStar.draw(mMVPMatrix);
+        mStar.draw(mVPMatrix);
         
         for (int n=0;n<NUM_SPRITES;n++)
         {
-        	mSprites[n].draw(mMVPMatrix);
+        	mSprites[n].draw(mVPMatrix);
         }
 	}
 
 	@Override
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
 		
-        // Adjust the viewport based on geometry changes,
-        // such as screen rotation
+        // Adjust the viewport based on geometry changes, such as screen rotation
         GLES20.glViewport(0, 0, width, height);
 
         mScreenW = width;
@@ -123,8 +120,18 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         
         // this projection matrix is applied to object coordinates
         // in the onDrawFrame() method
-        Matrix.frustumM(mProjMatrix, 0, -mXRatio, mXRatio, -mYRatio, mYRatio, 3, 7);  
-        //Matrix.frustumM(mProjMatrix, 0, -1, 1, -1, 1, 3, 7);
+        //Matrix.frustumM(mProjMatrix, 0, -mXRatio, mXRatio, -mYRatio, mYRatio, 3, 7);  
+        //Matrix.frustumM(m, offset, left, right, bottom, top, near, far)
+        
+        // Set the projection matrix
+        Matrix.orthoM(mProjMatrix,
+        			  0,		// mOffset
+        			  -mXRatio,	// left
+        			  mXRatio,	// right
+        			  -mYRatio,	// bottom
+        			  mYRatio,	// top
+        			  -1,		// near
+        			  1);		// far       
 	}
 
 	@Override
@@ -133,8 +140,13 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
 		// Set the background frame color
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
      
-        mSquare   = new Square();        
+        mSquare   = new Sprite();  
+        mSquare.x = 0.4f;
+        mSquare.y = 0.4f;
+        
         mStar = new Sprite();
+        mStar.x = 0.4f;
+        mStar.y = 0.4f;
         
         //textureProgram = new TextureShaderProgram(context);
         texture = TextureHelper.loadTexture(context, R.drawable.unit_square);   
@@ -142,8 +154,6 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         
         mSquare.setTextureId(texture);
         mStar.setTextureId(starTexture);
-        
-        
         
         mSprites = new Sprite[NUM_SPRITES];
         
@@ -160,6 +170,26 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
         	mSprites[n].y =	0f;
         }
         
+        mSprites[1].setTextureId(textureTile2);
+        mSprites[2].setTextureId(textureTile3);
+        mSprites[3].setTextureId(textureTile4);
+        
+        mSprites[5].setTextureId(textureTile2);
+        mSprites[6].setTextureId(textureTile3);
+        mSprites[7].setTextureId(textureTile4);
+        
+        // Set the camera position (View matrix)
+        Matrix.setLookAtM(mVMatrix,
+        				  0,		// rmOffset
+        				  0,		// eyeX
+        				  0,		// eyeY
+        				  -1,		// eyeZ
+        				  0f,		// centerX
+        				  0f,		// centerY
+        				  0f,		// centerZ
+        				  0f,		// upX
+        				  1.0f,		// upY
+        				  0.0f);	// upZ        
 	}
 	
     public static int loadShader(int type, String shaderCode){
